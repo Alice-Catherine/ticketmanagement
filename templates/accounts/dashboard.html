@@ -5,7 +5,11 @@
 <p>Role: {{ user.role }}</p>
 
 <div class="mt-4">
-    <a href="{% url 'tickets:my_tickets' %}" class="btn btn-primary">View My Tickets</a>
+    {% if user.can_view_all_tickets %}
+        <a href="{% url 'tickets:my_tickets' %}" class="btn btn-primary">View All Tickets</a>
+    {% else %}
+        <a href="{% url 'tickets:my_tickets' %}" class="btn btn-primary">View My Tickets</a>
+    {% endif %}
     <a href="{% url 'tickets:create_ticket' %}" class="btn btn-outline-primary">+ New Ticket</a>
 </div>
 {% endblock %}

@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3>My Tickets</h3>
+    <h3>{% if user.can_view_all_tickets %}All Tickets{% else %}My Tickets{% endif %}</h3>
     <a href="{% url 'tickets:create_ticket' %}" class="btn btn-primary">+ New Ticket</a>
 </div>
 

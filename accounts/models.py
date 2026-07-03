@@ -21,5 +21,8 @@ class User(AbstractUser):
     profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
     is_active_agent = models.BooleanField(default=True)
 
+    def can_view_all_tickets(self):
+        return self.role in ['admin', 'manager', 'agent']
+
     def __str__(self):
         return f"{self.get_full_name() or self.username} ({self.role})"
