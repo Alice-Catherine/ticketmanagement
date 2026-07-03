@@ -3,5 +3,9 @@
 {% block content %}
 <h2>Welcome, {{ user.username }}!</h2>
 <p>Role: {{ user.role }}</p>
-<p>This is your dashboard. We'll build ticket lists and stats here next.</p>
+
+<div class="mt-4">
+    <a href="{% url 'tickets:my_tickets' %}" class="btn btn-primary">View My Tickets</a>
+    <a href="{% url 'tickets:create_ticket' %}" class="btn btn-outline-primary">+ New Ticket</a>
+</div>
 {% endblock %}
