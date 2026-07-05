@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import TicketForm
+from django.http import HttpResponseForbidden
+from .forms import TicketForm, AttachmentForm
 from .models import Ticket, TicketComment
 
 
@@ -36,14 +37,31 @@ def ticket_detail(request, ticket_number):
     ticket = get_object_or_404(Ticket, ticket_number=ticket_number)
 
     if not (ticket.created_by == request.user or request.user.can_view_all_tickets()):
-        from django.http import HttpResponseForbidden
         return HttpResponseForbidden("You don't have permission to view this ticket.")
 
     if request.method == 'POST':
-        message = request.POST.get('message')
-        if message:
-            TicketComment.objects.create(ticket=ticket, author=request.user, message=message)
-            return redirect('tickets:ticket_detail', ticket_number=ticket.ticket_number)
+        if 'message' in request.POST:
+            message = request.POST.get('message')
+            if message:
+                TicketComment.objects.create(ticket=ticket, author=request.user, message=message)
+                return redirect('tickets:ticket_detail', ticket_number=ticket.ticket_number)
+
+        elif 'file' in request.FILES:
+            attachment_form = AttachmentForm(request.POST, request.FILES)
+            if attachment_form.is_valid():
+                attachment = attachment_form.save(commit=False)
+                attachment.ticket = ticket
+                attachment.uploaded_by = request.user
+                attachment.save()
+                return redirect('tickets:ticket_detail', ticket_number=ticket.ticket_number)
 
     comments = ticket.comments.all().order_by('created_at')
-    return render(request, 'tickets/ticket_detail.html', {'ticket': ticket, 'comments': comments})
+    attachments = ticket.attachments.all().order_by('-uploaded_at')
+    attachment_form = AttachmentForm()
+
+    return render(request, 'tickets/ticket_detail.html', {
+        'ticket': ticket,
+        'comments': comments,
+        'attachments': attachments,
+        'attachment_form': attachment_form,
+    })

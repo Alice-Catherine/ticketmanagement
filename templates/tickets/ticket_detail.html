@@ -11,7 +11,7 @@
         <p><strong>Status:</strong> <span class="badge bg-secondary">{{ ticket.get_status_display }}</span></p>
         <p><strong>Priority:</strong> {{ ticket.get_priority_display }}</p>
         <p><strong>Department:</strong> {{ ticket.department }}</p>
-        <p><strong>Category:</strong> {{ ticket.category|default:"—" }}</p>
+        <p><strong>Category:</strong> {{ ticket.category|default:"--" }}</p>
         <p><strong>Created:</strong> {{ ticket.created_at|date:"M d, Y H:i" }}</p>
         <hr>
         <p><strong>Description:</strong></p>
@@ -38,5 +38,21 @@
         <textarea name="message" class="form-control" rows="3" placeholder="Add a comment..." required></textarea>
     </div>
     <button type="submit" class="btn btn-primary">Post Comment</button>
+</form>
+
+<h4 class="mt-4">Attachments</h4>
+{% for attachment in attachments %}
+<div class="mb-2">
+    <a href="{{ attachment.file.url }}" target="_blank">{{ attachment.file.name }}</a>
+    <small class="text-muted">-- uploaded by {{ attachment.uploaded_by.username }} on {{ attachment.uploaded_at|date:"M d, Y" }}</small>
+</div>
+{% empty %}
+<p>No attachments yet.</p>
+{% endfor %}
+
+<form method="post" enctype="multipart/form-data" class="mt-3">
+    {% csrf_token %}
+    {{ attachment_form }}
+    <button type="submit" class="btn btn-outline-primary mt-2">Upload File</button>
 </form>
 {% endblock %}
