@@ -4,6 +4,24 @@
 <h2>Welcome, {{ user.username }}!</h2>
 <p>Role: {{ user.role }}</p>
 
+{% if notifications %}
+<div class="alert alert-info">
+    <strong>🔔 Notifications</strong>
+    <ul class="mb-0 mt-2">
+        {% for note in notifications %}
+        <li>
+            {% if note.ticket %}
+                <a href="{% url 'tickets:ticket_detail' note.ticket.ticket_number %}">{{ note.message }}</a>
+            {% else %}
+                {{ note.message }}
+            {% endif %}
+            <small class="text-muted">-- {{ note.created_at|date:"M d, Y H:i" }}</small>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
 <div class="row mt-4 mb-4">
     <div class="col-md-2 col-6 mb-3">
         <div class="card text-center shadow-sm">

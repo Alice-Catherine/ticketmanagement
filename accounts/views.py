@@ -2,6 +2,7 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from tickets.models import Ticket
+from notifications.models import Notification
 
 
 class StaffLoginView(LoginView):
@@ -32,4 +33,9 @@ def dashboard_view(request):
         'closed': tickets.filter(status='closed').count(),
     }
 
-    return render(request, 'accounts/dashboard.html', {'stats': stats})
+    notifications = user.notifications.filter(is_read=False)[:5]
+
+    return render(request, 'accounts/dashboard.html', {
+        'stats': stats,
+        'notifications': notifications,
+    })

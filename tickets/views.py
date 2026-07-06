@@ -4,6 +4,7 @@ from django.http import HttpResponseForbidden
 from django.contrib import messages
 from .forms import TicketForm, AttachmentForm, TicketManageForm
 from .models import Ticket, TicketComment
+from notifications.models import Notification
 
 
 @login_required
@@ -59,9 +60,18 @@ def ticket_detail(request, ticket_number):
                 return redirect('tickets:ticket_detail', ticket_number=ticket.ticket_number)
 
         elif 'status' in request.POST and can_manage:
+            previous_assignee = ticket.assigned_to
             manage_form = TicketManageForm(request.POST, instance=ticket, department=ticket.department)
             if manage_form.is_valid():
-                manage_form.save()
+                updated_ticket = manage_form.save()
+
+                if updated_ticket.assigned_to and updated_ticket.assigned_to != previous_assignee:
+                    Notification.objects.create(
+                        user=updated_ticket.assigned_to,
+                        ticket=updated_ticket,
+                        message=f"You've been assigned ticket {updated_ticket.ticket_number}: {updated_ticket.title}"
+                    )
+
                 messages.success(request, "Ticket updated successfully.")
                 return redirect('tickets:ticket_detail', ticket_number=ticket.ticket_number)
 
