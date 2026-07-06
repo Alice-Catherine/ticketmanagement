@@ -1,7 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
-from .forms import TicketForm, AttachmentForm
+from django.contrib import messages
+from .forms import TicketForm, AttachmentForm, TicketManageForm
 from .models import Ticket, TicketComment
 
 
@@ -28,7 +29,6 @@ def my_tickets(request):
             tickets = Ticket.objects.filter(department=request.user.department).order_by('-created_at')
     else:
         tickets = Ticket.objects.filter(created_by=request.user).order_by('-created_at')
-
     return render(request, 'tickets/my_tickets.html', {'tickets': tickets})
 
 
@@ -38,6 +38,9 @@ def ticket_detail(request, ticket_number):
 
     if not (ticket.created_by == request.user or request.user.can_view_all_tickets()):
         return HttpResponseForbidden("You don't have permission to view this ticket.")
+
+    can_manage = request.user.can_view_all_tickets()
+    manage_form = None
 
     if request.method == 'POST':
         if 'message' in request.POST:
@@ -55,6 +58,16 @@ def ticket_detail(request, ticket_number):
                 attachment.save()
                 return redirect('tickets:ticket_detail', ticket_number=ticket.ticket_number)
 
+        elif 'status' in request.POST and can_manage:
+            manage_form = TicketManageForm(request.POST, instance=ticket, department=ticket.department)
+            if manage_form.is_valid():
+                manage_form.save()
+                messages.success(request, "Ticket updated successfully.")
+                return redirect('tickets:ticket_detail', ticket_number=ticket.ticket_number)
+
+    if manage_form is None and can_manage:
+        manage_form = TicketManageForm(instance=ticket, department=ticket.department)
+
     comments = ticket.comments.all().order_by('created_at')
     attachments = ticket.attachments.all().order_by('-uploaded_at')
     attachment_form = AttachmentForm()
@@ -64,4 +77,6 @@ def ticket_detail(request, ticket_number):
         'comments': comments,
         'attachments': attachments,
         'attachment_form': attachment_form,
+        'manage_form': manage_form,
+        'can_manage': can_manage,
     })

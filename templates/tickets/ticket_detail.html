@@ -12,12 +12,26 @@
         <p><strong>Priority:</strong> {{ ticket.get_priority_display }}</p>
         <p><strong>Department:</strong> {{ ticket.department }}</p>
         <p><strong>Category:</strong> {{ ticket.category|default:"--" }}</p>
+        <p><strong>Assigned To:</strong> {{ ticket.assigned_to|default:"Unassigned" }}</p>
         <p><strong>Created:</strong> {{ ticket.created_at|date:"M d, Y H:i" }}</p>
         <hr>
         <p><strong>Description:</strong></p>
         <p>{{ ticket.description }}</p>
     </div>
 </div>
+
+{% if can_manage %}
+<div class="card mb-4 border-primary">
+    <div class="card-body">
+        <h5 class="card-title">Manage Ticket</h5>
+        <form method="post">
+            {% csrf_token %}
+            {{ manage_form.as_p }}
+            <button type="submit" class="btn btn-primary">Update Ticket</button>
+        </form>
+    </div>
+</div>
+{% endif %}
 
 <h4>Comments</h4>
 {% for comment in comments %}
