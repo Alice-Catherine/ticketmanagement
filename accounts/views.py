@@ -1,6 +1,7 @@
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from tickets.models import Ticket
 
 
 class StaffLoginView(LoginView):
@@ -13,4 +14,22 @@ class StaffLogoutView(LogoutView):
 
 @login_required
 def dashboard_view(request):
-    return render(request, 'accounts/dashboard.html')
+    user = request.user
+
+    if user.can_view_all_tickets():
+        if user.role == 'admin':
+            tickets = Ticket.objects.all()
+        else:
+            tickets = Ticket.objects.filter(department=user.department)
+    else:
+        tickets = Ticket.objects.filter(created_by=user)
+
+    stats = {
+        'total': tickets.count(),
+        'open': tickets.filter(status='open').count(),
+        'in_progress': tickets.filter(status='in_progress').count(),
+        'resolved': tickets.filter(status='resolved').count(),
+        'closed': tickets.filter(status='closed').count(),
+    }
+
+    return render(request, 'accounts/dashboard.html', {'stats': stats})
