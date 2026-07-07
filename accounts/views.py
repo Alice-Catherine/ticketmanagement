@@ -10,7 +10,7 @@ class StaffLoginView(LoginView):
 
 
 class StaffLogoutView(LogoutView):
-    next_page = 'login'
+    next_page = 'accounts:login'
 
 
 @login_required

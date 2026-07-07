@@ -1,0 +1,22 @@
+{% extends "admin/login.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+<style>
+    body.login {
+        background: #1a1a2e;
+    }
+    .login #header {
+        background: #16213e;
+    }
+    #login-form {
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">Service Desk Administration</h1>
+{% endblock %}

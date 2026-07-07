@@ -1,8 +1,9 @@
 from django.contrib import admin
+from accounts.admin import admin_site
 from .models import TicketCategory, Ticket, TicketComment, TicketAttachment, TicketHistory
 
 
-@admin.register(TicketCategory)
+@admin.register(TicketCategory, site=admin_site)
 class TicketCategoryAdmin(admin.ModelAdmin):
     list_display = ['name', 'department']
     list_filter = ['department']
@@ -27,7 +28,7 @@ class TicketHistoryInline(admin.TabularInline):
     can_delete = False
 
 
-@admin.register(Ticket)
+@admin.register(Ticket, site=admin_site)
 class TicketAdmin(admin.ModelAdmin):
     list_display = ['ticket_number', 'title', 'department', 'status', 'priority', 'assigned_to', 'created_by', 'created_at']
     list_filter = ['status', 'priority', 'department']
@@ -36,11 +37,17 @@ class TicketAdmin(admin.ModelAdmin):
     inlines = [TicketCommentInline, TicketAttachmentInline, TicketHistoryInline]
 
 
-@admin.register(TicketComment)
+@admin.register(TicketComment, site=admin_site)
 class TicketCommentAdmin(admin.ModelAdmin):
     list_display = ['ticket', 'author', 'created_at']
 
 
-@admin.register(TicketAttachment)
+@admin.register(TicketAttachment, site=admin_site)
 class TicketAttachmentAdmin(admin.ModelAdmin):
     list_display = ['ticket', 'uploaded_by', 'uploaded_at']
+
+
+@admin.register(TicketHistory, site=admin_site)
+class TicketHistoryAdmin(admin.ModelAdmin):
+    list_display = ['ticket', 'field_changed', 'old_value', 'new_value', 'changed_by', 'changed_at']
+    list_filter = ['field_changed']
