@@ -2,7 +2,18 @@ from django.conf import settings
 from django.db import models
 
 
+class BusinessUnit(models.Model):
+    """A company team like Sales, Marketing, HR — just a label on an employee's profile."""
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Department(models.Model):
+    """A support team like IT Support, Finance, Security — handles and routes tickets."""
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     manager = models.ForeignKey(

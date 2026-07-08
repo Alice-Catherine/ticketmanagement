@@ -1,6 +1,6 @@
 from django.contrib import admin
 from accounts.admin import admin_site
-from .models import TicketCategory, Ticket, TicketComment, TicketAttachment, TicketHistory
+from .models import TicketCategory, Ticket, TicketComment, TicketAttachment, TicketHistory, ReassignmentRequest
 
 
 @admin.register(TicketCategory, site=admin_site)
@@ -51,3 +51,9 @@ class TicketAttachmentAdmin(admin.ModelAdmin):
 class TicketHistoryAdmin(admin.ModelAdmin):
     list_display = ['ticket', 'field_changed', 'old_value', 'new_value', 'changed_by', 'changed_at']
     list_filter = ['field_changed']
+
+
+@admin.register(ReassignmentRequest, site=admin_site)
+class ReassignmentRequestAdmin(admin.ModelAdmin):
+    list_display = ['ticket', 'requested_by', 'requested_assignee', 'status', 'created_at']
+    list_filter = ['status']

@@ -9,14 +9,22 @@ class User(AbstractUser):
         ('agent', 'Support Agent'),
         ('employee', 'Employee/User'),
     ]
-
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='employee')
+
+    business_unit = models.ForeignKey(
+        'departments.BusinessUnit',
+        null=True, 
+        on_delete=models.SET_NULL,
+        related_name='employees',
+    )
     department = models.ForeignKey(
         'departments.Department',
         null=True, blank=True,
         on_delete=models.SET_NULL,
-        related_name='users'
+        related_name='users',
+        help_text="The support team this staff member belongs to (managers/agents only)."
     )
+
     phone = models.CharField(max_length=20, blank=True)
     profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
     is_active_agent = models.BooleanField(default=True)

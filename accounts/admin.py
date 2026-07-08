@@ -1,7 +1,5 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.views import LogoutView
-from django.urls import reverse_lazy
 from .models import User
 
 
@@ -13,10 +11,19 @@ class RoleBasedAdminSite(admin.AdminSite):
     def has_permission(self, request):
         return request.user.is_active and request.user.role == 'admin'
 
-    def logout(self, request, extra_context=None):
-        return LogoutView.as_view(next_page=reverse_lazy('custom_admin:login'))(request)
-
 
 admin_site = RoleBasedAdminSite(name='custom_admin')
 
-admin_site.register(User, UserAdmin)
+
+class CustomUserAdmin(UserAdmin):
+    list_display = ['username', 'email', 'role', 'department', 'is_staff', 'is_active_agent']
+    list_filter = ['role', 'department', 'is_staff', 'is_active_agent']
+    fieldsets = (
+    (None, {'fields': ('username', 'password')}),
+    ('Personal Info', {'fields': ( 'email', 'phone', 'profile_picture')}),
+    ('Service Desk Info', {'fields': ('role', 'department', 'is_active_agent')}),
+    ('Status', {'fields': ('is_active', 'is_staff')}),
+)
+# Registering the model
+
+admin_site.register(User, CustomUserAdmin)

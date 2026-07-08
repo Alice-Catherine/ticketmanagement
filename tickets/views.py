@@ -2,9 +2,13 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.contrib import messages
-from .forms import TicketForm, AttachmentForm, TicketManageForm
-from .models import Ticket, TicketComment
+from django.utils import timezone
+from django.contrib.auth import get_user_model
+from .forms import TicketForm, AttachmentForm, TicketManageForm, ReassignmentRequestForm
+from .models import Ticket, TicketComment, ReassignmentRequest
 from notifications.models import Notification
+
+User = get_user_model()
 
 
 @login_required
@@ -23,6 +27,8 @@ def create_ticket(request):
 
 @login_required
 def my_tickets(request):
+    status_filter = request.GET.get('status')
+
     if request.user.can_view_all_tickets():
         if request.user.role == 'admin':
             tickets = Ticket.objects.all().order_by('-created_at')
@@ -30,7 +36,11 @@ def my_tickets(request):
             tickets = Ticket.objects.filter(department=request.user.department).order_by('-created_at')
     else:
         tickets = Ticket.objects.filter(created_by=request.user).order_by('-created_at')
-    return render(request, 'tickets/my_tickets.html', {'tickets': tickets})
+
+    if status_filter:
+        tickets = tickets.filter(status=status_filter)
+
+    return render(request, 'tickets/my_tickets.html', {'tickets': tickets, 'status_filter': status_filter})
 
 
 @login_required
@@ -40,8 +50,12 @@ def ticket_detail(request, ticket_number):
     if not (ticket.created_by == request.user or request.user.can_view_all_tickets()):
         return HttpResponseForbidden("You don't have permission to view this ticket.")
 
-    can_manage = request.user.can_view_all_tickets()
+    Notification.objects.filter(user=request.user, ticket=ticket, is_read=False).update(is_read=True)
+
+    is_admin = request.user.role == 'admin'
+    can_request_reassignment = request.user.role in ['manager', 'agent']
     manage_form = None
+    reassign_form = None
 
     if request.method == 'POST':
         if 'message' in request.POST:
@@ -59,7 +73,7 @@ def ticket_detail(request, ticket_number):
                 attachment.save()
                 return redirect('tickets:ticket_detail', ticket_number=ticket.ticket_number)
 
-        elif 'status' in request.POST and can_manage:
+        elif 'status' in request.POST and is_admin:
             previous_assignee = ticket.assigned_to
             manage_form = TicketManageForm(request.POST, instance=ticket, department=ticket.department)
             if manage_form.is_valid():
@@ -75,8 +89,31 @@ def ticket_detail(request, ticket_number):
                 messages.success(request, "Ticket updated successfully.")
                 return redirect('tickets:ticket_detail', ticket_number=ticket.ticket_number)
 
-    if manage_form is None and can_manage:
+        elif 'requested_assignee' in request.POST and can_request_reassignment:
+            reassign_form = ReassignmentRequestForm(request.POST, department=ticket.department, current_assignee=ticket.assigned_to)
+            if reassign_form.is_valid():
+                reassignment = reassign_form.save(commit=False)
+                reassignment.ticket = ticket
+                reassignment.requested_by = request.user
+                reassignment.save()
+
+                for admin_user in User.objects.filter(role='admin'):
+                    Notification.objects.create(
+                        user=admin_user,
+                        ticket=ticket,
+                        message=f"{request.user.username} requested reassignment of {ticket.ticket_number} to {reassignment.requested_assignee.username}"
+                    )
+
+                messages.success(request, "Reassignment request submitted for admin approval.")
+                return redirect('tickets:ticket_detail', ticket_number=ticket.ticket_number)
+
+    if manage_form is None and is_admin:
         manage_form = TicketManageForm(instance=ticket, department=ticket.department)
+
+    if reassign_form is None and can_request_reassignment:
+        reassign_form = ReassignmentRequestForm(department=ticket.department, current_assignee=ticket.assigned_to)
+
+    pending_requests = ticket.reassignment_requests.filter(status='pending') if is_admin else None
 
     comments = ticket.comments.all().order_by('created_at')
     attachments = ticket.attachments.all().order_by('-uploaded_at')
@@ -88,5 +125,61 @@ def ticket_detail(request, ticket_number):
         'attachments': attachments,
         'attachment_form': attachment_form,
         'manage_form': manage_form,
-        'can_manage': can_manage,
+        'reassign_form': reassign_form,
+        'is_admin': is_admin,
+        'can_request_reassignment': can_request_reassignment,
+        'pending_requests': pending_requests,
     })
+
+
+@login_required
+def approve_reassignment(request, request_id):
+    if request.user.role != 'admin':
+        return HttpResponseForbidden("Only Administrators can approve reassignment requests.")
+
+    reassignment = get_object_or_404(ReassignmentRequest, id=request_id, status='pending')
+    ticket = reassignment.ticket
+
+    ticket.assigned_to = reassignment.requested_assignee
+    ticket.status = 'assigned'
+    ticket.save()
+
+    reassignment.status = 'approved'
+    reassignment.reviewed_by = request.user
+    reassignment.reviewed_at = timezone.now()
+    reassignment.save()
+
+    Notification.objects.create(
+        user=reassignment.requested_assignee,
+        ticket=ticket,
+        message=f"You've been assigned ticket {ticket.ticket_number}: {ticket.title}"
+    )
+    Notification.objects.create(
+        user=reassignment.requested_by,
+        ticket=ticket,
+        message=f"Your reassignment request for {ticket.ticket_number} was approved."
+    )
+
+    messages.success(request, "Reassignment approved.")
+    return redirect('tickets:ticket_detail', ticket_number=ticket.ticket_number)
+
+
+@login_required
+def reject_reassignment(request, request_id):
+    if request.user.role != 'admin':
+        return HttpResponseForbidden("Only Administrators can reject reassignment requests.")
+
+    reassignment = get_object_or_404(ReassignmentRequest, id=request_id, status='pending')
+    reassignment.status = 'rejected'
+    reassignment.reviewed_by = request.user
+    reassignment.reviewed_at = timezone.now()
+    reassignment.save()
+
+    Notification.objects.create(
+        user=reassignment.requested_by,
+        ticket=reassignment.ticket,
+        message=f"Your reassignment request for {reassignment.ticket.ticket_number} was rejected."
+    )
+
+    messages.success(request, "Reassignment request rejected.")
+    return redirect('tickets:ticket_detail', ticket_number=reassignment.ticket.ticket_number)

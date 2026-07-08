@@ -30,7 +30,12 @@ class Ticket(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     category = models.ForeignKey(TicketCategory, on_delete=models.SET_NULL, null=True, blank=True)
-    department = models.ForeignKey('departments.Department', on_delete=models.CASCADE, related_name='tickets')
+    department = models.ForeignKey(
+    'departments.Department',
+    null=True, blank=True,
+    on_delete=models.SET_NULL,
+    related_name='tickets'
+)
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -95,3 +100,22 @@ class TicketHistory(models.Model):
 
     class Meta:
         verbose_name_plural = "Ticket histories"
+
+class ReassignmentRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    ticket = models.ForeignKey(Ticket, related_name='reassignment_requests', on_delete=models.CASCADE)
+    requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reassignment_requests_made', on_delete=models.CASCADE)
+    requested_assignee = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reassignment_requests_target', on_delete=models.CASCADE)
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name='reassignment_requests_reviewed', on_delete=models.SET_NULL)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Reassignment request for {self.ticket.ticket_number} -> {self.requested_assignee}"

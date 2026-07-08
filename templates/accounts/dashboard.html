@@ -22,48 +22,58 @@
 </div>
 {% endif %}
 
+{% if can_view_stats %}
 <div class="row mt-4 mb-4">
-    <div class="col-md-2 col-6 mb-3">
-        <div class="card text-center shadow-sm">
+    <a href="{% url 'tickets:my_tickets' %}" class="col-md-2 col-6 mb-3 text-decoration-none">
+        <div class="card text-center shadow-sm stat-card">
             <div class="card-body">
                 <h3>{{ stats.total }}</h3>
                 <p class="text-muted mb-0">Total</p>
             </div>
         </div>
-    </div>
-    <div class="col-md-2 col-6 mb-3">
-        <div class="card text-center shadow-sm">
+    </a>
+    <a href="{% url 'tickets:my_tickets' %}?status=open" class="col-md-2 col-6 mb-3 text-decoration-none">
+        <div class="card text-center shadow-sm stat-card">
             <div class="card-body">
                 <h3>{{ stats.open }}</h3>
                 <p class="text-muted mb-0">Open</p>
             </div>
         </div>
-    </div>
-    <div class="col-md-2 col-6 mb-3">
-        <div class="card text-center shadow-sm">
+    </a>
+    <a href="{% url 'tickets:my_tickets' %}?status=assigned" class="col-md-2 col-6 mb-3 text-decoration-none">
+        <div class="card text-center shadow-sm stat-card">
+            <div class="card-body">
+                <h3>{{ stats.assigned }}</h3>
+                <p class="text-muted mb-0">Assigned</p>
+            </div>
+        </div>
+    </a>
+    <a href="{% url 'tickets:my_tickets' %}?status=in_progress" class="col-md-2 col-6 mb-3 text-decoration-none">
+        <div class="card text-center shadow-sm stat-card">
             <div class="card-body">
                 <h3>{{ stats.in_progress }}</h3>
                 <p class="text-muted mb-0">In Progress</p>
             </div>
         </div>
-    </div>
-    <div class="col-md-2 col-6 mb-3">
-        <div class="card text-center shadow-sm">
+    </a>
+    <a href="{% url 'tickets:my_tickets' %}?status=resolved" class="col-md-2 col-6 mb-3 text-decoration-none">
+        <div class="card text-center shadow-sm stat-card">
             <div class="card-body">
                 <h3>{{ stats.resolved }}</h3>
                 <p class="text-muted mb-0">Resolved</p>
             </div>
         </div>
-    </div>
-    <div class="col-md-2 col-6 mb-3">
-        <div class="card text-center shadow-sm">
+    </a>
+    <a href="{% url 'tickets:my_tickets' %}?status=closed" class="col-md-2 col-6 mb-3 text-decoration-none">
+        <div class="card text-center shadow-sm stat-card">
             <div class="card-body">
                 <h3>{{ stats.closed }}</h3>
                 <p class="text-muted mb-0">Closed</p>
             </div>
         </div>
-    </div>
+    </a>
 </div>
+{% endif %}
 
 <div class="mt-4">
     {% if user.can_view_all_tickets %}

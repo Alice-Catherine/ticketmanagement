@@ -1,42 +1,82 @@
-{% extends "base.html" %}
+={% extends "base.html" %}
 {% load crispy_forms_tags %}
 
 {% block content %}
 <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="card shadow-sm" style="width: 100%; max-width: 400px;">
+    <div class="card shadow-sm" style="width: 100%; max-width: 420px;">
         <div class="card-body p-4">
-            <h3 class="text-center mb-4">Staff Login</h3>
+            <ul class="nav nav-tabs mb-4" id="authTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'login' %}active{% endif %}" id="login-tab" data-bs-toggle="tab" data-bs-target="#login-pane" type="button" role="tab">Log In</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'register' %}active{% endif %}" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-pane" type="button" role="tab">Sign Up</button>
+                </li>
+            </ul>
 
-            {% if form.errors %}
-                <div class="alert alert-danger">
-                    Invalid username or password. Please try again.
+            <div class="tab-content">
+                <div class="tab-pane fade {% if active_tab == 'login' %}show active{% endif %}" id="login-pane" role="tabpanel">
+                    {% if form.errors %}
+                        <div class="alert alert-danger">Invalid username or password. Please try again.</div>
+                    {% endif %}
+                    <form method="post" action="{% url 'accounts:login' %}">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <div class="form-check mt-2 mb-3">
+                            <input type="checkbox" class="form-check-input" id="showPasswordCheck">
+                            <label class="form-check-label" for="showPasswordCheck">Show password</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mt-3">Log In</button>
+                    </form>
+                    <p class="text-center mt-3 mb-0">
+                        <a href="{% url 'accounts:password_reset' %}">Forgot password?</a>
+                    </p>
                 </div>
-            {% endif %}
 
-            <form method="post">
-                {% csrf_token %}
-                {{ form|crispy }}
-
-                <div class="form-check mt-2 mb-3">
-                    <input type="checkbox" class="form-check-input" id="showPasswordCheck">
-                    <label class="form-check-label" for="showPasswordCheck">Show password</label>
+                <div class="tab-pane fade {% if active_tab == 'register' %}show active{% endif %}" id="register-pane" role="tabpanel">
+                    {% if register_form.non_field_errors %}
+                        <div class="alert alert-danger">{{ register_form.non_field_errors }}</div>
+                    {% endif %}
+                    <form method="post" action="{% url 'accounts:register' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            {{ register_form.username }}
+                            <div class="text-danger">{{ register_form.username.errors }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Company Email</label>
+                            {{ register_form.email }}
+                            <small class="text-muted">Must be a @company.com address</small>
+                            <div class="text-danger">{{ register_form.email.errors }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Business Unit</label>
+                            {{ register_form.business_unit }}
+                            <div class="text-danger">{{ register_form.business_unit.errors }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            {{ register_form.password1 }}
+                            <div class="text-danger">{{ register_form.password1.errors }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Confirm Password</label>
+                            {{ register_form.password2 }}
+                            <div class="text-danger">{{ register_form.password2.errors }}</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+                    </form>
                 </div>
-
-                <button type="submit" class="btn btn-primary w-100 mt-3">Log In</button>
-            </form>
-
-            <p class="text-center mt-3 mb-0">
-                <a href="{% url 'accounts:password_reset' %}">Forgot password?</a>
-            </p>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    var passwordField = document.querySelector('input[type="password"]');
+    var passwordField = document.querySelector('#login-pane input[type="password"]');
     var checkbox = document.getElementById('showPasswordCheck');
-
     if (passwordField && checkbox) {
         checkbox.addEventListener("change", function () {
             passwordField.type = checkbox.checked ? "text" : "password";

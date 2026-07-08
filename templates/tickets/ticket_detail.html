@@ -9,10 +9,12 @@
 <div class="card mb-4">
     <div class="card-body">
         <p><strong>Status:</strong> <span class="badge bg-secondary">{{ ticket.get_status_display }}</span></p>
-        <p><strong>Priority:</strong> {{ ticket.get_priority_display }}</p>
-        <p><strong>Department:</strong> {{ ticket.department }}</p>
+        <p><strong>Created By:</strong> {{ ticket.created_by.username }}</p>
+        <p><strong>Business Unit:</strong> {{ ticket.created_by.business_unit|default:"Not set" }}</p>
         <p><strong>Category:</strong> {{ ticket.category|default:"--" }}</p>
         <p><strong>Assigned To:</strong> {{ ticket.assigned_to|default:"Unassigned" }}</p>
+        <p><strong>Department:</strong> {{ ticket.department|default:"Unassigned" }}</p>
+        <p><strong>Priority:</strong> {{ ticket.get_priority_display }}</p>
         <p><strong>Created:</strong> {{ ticket.created_at|date:"M d, Y H:i" }}</p>
         <hr>
         <p><strong>Description:</strong></p>
@@ -20,7 +22,7 @@
     </div>
 </div>
 
-{% if can_manage %}
+{% if is_admin %}
 <div class="card mb-4 border-primary">
     <div class="card-body">
         <h5 class="card-title">Manage Ticket</h5>
@@ -28,6 +30,36 @@
             {% csrf_token %}
             {{ manage_form.as_p }}
             <button type="submit" class="btn btn-primary">Update Ticket</button>
+        </form>
+    </div>
+</div>
+
+{% if pending_requests %}
+<div class="card mb-4 border-warning">
+    <div class="card-body">
+        <h5 class="card-title">Pending Reassignment Requests</h5>
+        {% for req in pending_requests %}
+        <div class="border rounded p-2 mb-2">
+            <p class="mb-1"><strong>{{ req.requested_by.username }}</strong> requested reassignment to <strong>{{ req.requested_assignee.username }}</strong></p>
+            <p class="mb-2 text-muted">Reason: {{ req.reason }}</p>
+            <a href="{% url 'tickets:approve_reassignment' req.id %}" class="btn btn-success btn-sm">Approve</a>
+            <a href="{% url 'tickets:reject_reassignment' req.id %}" class="btn btn-danger btn-sm">Reject</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+{% if can_request_reassignment %}
+<div class="card mb-4 border-info">
+    <div class="card-body">
+        <h5 class="card-title">Request Reassignment</h5>
+        <p class="text-muted">If this ticket is assigned incorrectly, request a reassignment for admin approval.</p>
+        <form method="post">
+            {% csrf_token %}
+            {{ reassign_form.as_p }}
+            <button type="submit" class="btn btn-info">Submit Request</button>
         </form>
     </div>
 </div>
